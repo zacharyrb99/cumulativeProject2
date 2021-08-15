@@ -280,7 +280,7 @@ describe("/DELETE /jobs/id", () => {
     test("fails for non-admin", async () => {
         let testJob = await Job.findAll("j1");
         let resp = await request(app).delete(`/jobs/${testJob[0].id}`)
-        .set("authorization", `Bearer ${adminToken}`);
+        .set("authorization", `Bearer ${u1Token}`);
 
         expect(resp.statusCode).toBe(401);
     });

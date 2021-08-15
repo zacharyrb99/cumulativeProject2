@@ -117,6 +117,7 @@ describe("findAll", function () {
         lastName: "U1L",
         email: "u1@email.com",
         isAdmin: false,
+        jobs: []
       },
       {
         username: "u2",
@@ -124,6 +125,7 @@ describe("findAll", function () {
         lastName: "U2L",
         email: "u2@email.com",
         isAdmin: false,
+        jobs: []
       },
     ]);
   });

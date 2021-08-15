@@ -102,17 +102,22 @@ class User {
    **/
 
   static async findAll() {
-    const result = await db.query(
+    const userResults = await db.query(
           `SELECT username,
                   first_name AS "firstName",
                   last_name AS "lastName",
                   email,
                   is_admin AS "isAdmin"
            FROM users
-           ORDER BY username`,
-    );
+           ORDER BY username`);
 
-    return result.rows;
+    for(let u in userResults.rows){
+      let user = userResults.rows[u];
+      let appResults = await db.query(`SELECT job_id AS "jobID" FROM applications WHERE username=$1`, [user.username]);
+      user.jobs = appResults.rows;
+    }
+
+    return userResults.rows;
   }
 
   /** Given a username, return data about user.
@@ -203,6 +208,18 @@ class User {
     const user = result.rows[0];
 
     if (!user) throw new NotFoundError(`No user: ${username}`);
+  }
+
+  static async apply(username, jobId){
+    let appResult = await db.query(
+      `INSERT INTO applications (username, job_id) VALUES ($1, $2) 
+      RETURNING username, job_id`, [username, jobId]);
+    
+    let userResult = await db.query(`SELECT * FROM users WHERE username=$1`, [username]);
+
+    let app = appResult.rows[0];
+
+    return app
   }
 }
 

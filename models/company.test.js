@@ -85,6 +85,61 @@ describe("findAll", function () {
       },
     ]);
   });
+
+  test("filter name", async () => {
+    let companies = await Company.findAll('c1');
+    expect(companies).toEqual([{
+        handle: 'c1',
+        name: 'C1',
+        description: 'Desc1',
+        numEmployees: 1,
+        logoUrl: 'http://c1.img'
+      }]);
+  });
+
+  test("filter maxEmployees", async () => {
+    let companies = await Company.findAll(null, null, 2);
+    expect(companies).toEqual([{
+      handle: 'c1',
+      name: 'C1',
+      description: 'Desc1',
+      numEmployees: 1,
+      logoUrl: 'http://c1.img'
+    }]);
+  });
+
+  test("filter minEmployees", async () => {
+    let companies = await Company.findAll(null, 2, 4); 
+    expect(companies).toEqual([{
+      handle: 'c3',
+      name: 'C3',
+      description: 'Desc3',
+      numEmployees: 3,
+      logoUrl: 'http://c3.img'
+    }]);
+  });
+
+  test("filter minEmployees/maxEmployees", async () => {
+    let companies = await Company.findAll(null, 1, 3); 
+    expect(companies).toEqual([{
+      handle: 'c2',
+      name: 'C2',
+      description: 'Desc2',
+      numEmployees: 2,
+      logoUrl: 'http://c2.img'
+    }]);
+  });
+
+  test("filter name/minEmployees/maxEmployees", async () => {
+    let companies = await Company.findAll('c', 1, 3); 
+    expect(companies).toEqual([{
+      handle: 'c2',
+      name: 'C2',
+      description: 'Desc2',
+      numEmployees: 2,
+      logoUrl: 'http://c2.img'
+    }]);
+  });
 });
 
 /************************************** get */
@@ -98,6 +153,7 @@ describe("get", function () {
       description: "Desc1",
       numEmployees: 1,
       logoUrl: "http://c1.img",
+      jobs: []
     });
   });
 

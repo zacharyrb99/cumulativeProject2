@@ -49,16 +49,98 @@ class Company {
    * Returns [{ handle, name, description, numEmployees, logoUrl }, ...]
    * */
 
-  static async findAll() {
-    const companiesRes = await db.query(
-          `SELECT handle,
-                  name,
-                  description,
-                  num_employees AS "numEmployees",
-                  logo_url AS "logoUrl"
-           FROM companies
-           ORDER BY name`);
-    return companiesRes.rows;
+  static async findAll(name, minEmployees, maxEmployees) {
+    if(!name && !minEmployees && !maxEmployees){  
+      const companiesRes = await db.query(
+            `SELECT handle,
+                    name,
+                    description,
+                    num_employees AS "numEmployees",
+                    logo_url AS "logoUrl"
+            FROM companies
+            ORDER BY name`);
+      return companiesRes.rows;
+    } else if(minEmployees > maxEmployees){
+        throw new BadRequestError('minEmployees cannot be greater than maxEmployees');
+    } else if(!name && minEmployees && maxEmployees) {
+        const companies = await db.query(
+          `SELECT handle, name, description, num_employees AS "numEmployees", logo_url AS "logoUrl"
+          FROM companies WHERE num_employees > $1 AND num_employees < $2
+          ORDER BY name`, [minEmployees, maxEmployees]);
+
+        if(companies.rows.length === 0){
+          throw new BadRequestError('No companies fit those parameters');
+        }
+      
+        return companies.rows;
+
+    } else if(!name && minEmployees && !maxEmployees){
+        const companies = await db.query(
+          `SELECT handle, name, description, num_employees AS "numEmployees", logo_url AS "logoUrl"
+          FROM companies WHERE num_employees > $1 ORDER BY name`, [minEmployees]);
+        
+        if(companies.rows.length === 0){
+          throw new BadRequestError('No companies fit those parameters');
+        }
+
+        return companies.rows;
+
+    } else if(!name && !minEmployees && maxEmployees){
+        const companies = await db.query(
+          `SELECT handle, name, description, num_employees AS "numEmployees", logo_url AS "logoUrl"
+          FROM companies WHERE num_employees < $1 ORDER BY name`, [maxEmployees]);
+        
+        if(companies.rows.length === 0){
+          throw new BadRequestError('No companies fit those parameters');
+        }
+
+        return companies.rows;
+
+    } else if(name && !minEmployees && !maxEmployees){
+        const companies = await db.query(
+          `SELECT handle, name, description, num_employees AS "numEmployees", logo_url AS "logoUrl"
+          FROM companies WHERE LOWER(name) LIKE $1 ORDER BY name`, [`%${name}%`]);
+        
+        if(companies.rows.length === 0){
+          throw new BadRequestError('No companies fit those parameters');
+        }
+        
+        return companies.rows;
+    }else if(name && minEmployees && !maxEmployees){
+        const companies = await db.query(
+          `SELECT handle, name, description, num_employees AS "numEmployees", logo_url AS "logoUrl"
+          FROM companies WHERE num_employees > $1 AND LOWER(name) LIKE $2 ORDER BY name`, [minEmployees, `%${name}%`]);
+        
+        if(companies.rows.length === 0){
+          throw new BadRequestError('No companies fit those parameters');
+        }
+        
+        return companies.rows;
+    }else if(name && !minEmployees && maxEmployees){
+        const companies = await db.query(
+          `SELECT handle, name, description, num_employees AS "numEmployees", logo_url AS "logoUrl"
+          FROM companies WHERE num_employees < $1 AND LOWER(name) LIKE $2 ORDER BY name`, [maxEmployees, `%${name}%`]);
+        
+        if(companies.rows.length === 0){
+          throw new BadRequestError('No companies fit those parameters');
+        }
+        
+        return companies.rows;
+    }else if(name && minEmployees && maxEmployees){
+        const companies = await db.query(
+          `SELECT handle, name, description, num_employees AS "numEmployees", logo_url AS "logoUrl"
+          FROM companies 
+          WHERE num_employees > $1 
+          AND num_employees < $2 
+          AND LOWER(name) LIKE $3 
+          ORDER BY name`, [minEmployees, maxEmployees, `%${name}%`]);
+        
+        if(companies.rows.length === 0){
+          throw new BadRequestError('No companies fit those parameters');
+        }
+        
+        return companies.rows;
+    }
   }
 
   /** Given a company handle, return data about company.
@@ -80,9 +162,16 @@ class Company {
            WHERE handle = $1`,
         [handle]);
 
+    const jobRes = await db.query(
+      `SELECT id, title, salary, equity, company_handle AS "companyHandle" 
+      FROM jobs WHERE company_handle=$1`, [handle]
+    );
+
     const company = companyRes.rows[0];
 
     if (!company) throw new NotFoundError(`No company: ${handle}`);
+
+    company.jobs = jobRes.rows;
 
     return company;
   }
